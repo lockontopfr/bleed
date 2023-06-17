@@ -414,7 +414,7 @@ class Miscellaneous(Cog):
             },
         )
         if not data.list:
-            return await ctx.warn(f"No results were found for **{word}**")
+            return await ctx.search(f"No results were found for **{word}**")
 
         return await ctx.paginate(
             [

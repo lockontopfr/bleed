@@ -44,6 +44,17 @@ class Context(commands.Context):
             **kwargs,
         )
 
+    async def search(
+        self, content: str, color: int = config.Color.search, emoji: str = "🔎", **kwargs
+    ) -> Message:
+        return await self.send(
+            embed=Embed(
+                color=color,
+                description=f"{emoji} {self.author.mention}: {content}",
+            ),
+            **kwargs,
+        )
+
     async def approve(
         self, content: str, emoji: str = config.Emoji.approve, **kwargs
     ) -> Message:
@@ -186,10 +197,13 @@ class Context(commands.Context):
                 title="Command: " + self.command.qualified_name,
                 description=(
                     (self.command.short_doc or "")
+                    + f"```\nSyntax: {self.prefix}{self.command.qualified_name} {self.command.usage or ''}"
                     + (
-                        f"```\nSyntax: {self.prefix}{self.command.qualified_name} {self.command.usage or ''}"
-                        + f"\nExample: {self.prefix}{self.command.qualified_name} {self.command.example or ''}```"
+                        f"\nExample: {self.prefix}{self.command.qualified_name} {self.command.example}"
+                        if self.command.example
+                        else ""
                     )
+                    + "```"
                 ),
             ).set_author(
                 name="bleed help",

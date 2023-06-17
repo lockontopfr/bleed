@@ -1,5 +1,6 @@
 import json
 
+from datetime import datetime
 from pathlib import Path
 from typing import Any, Optional, Union
 
@@ -14,6 +15,7 @@ from asyncpg import Connection, Pool, create_pool
 from discord import AuditLogEntry, Embed, Guild, HTTPException, Message
 from discord.ext import commands
 from discord.ext.commands import Command, Group
+from discord.utils import utcnow
 from pomice import Node
 
 import config
@@ -45,10 +47,37 @@ class Bleed(commands.AutoShardedBot):
             owner_ids=config.owner_ids,
         )
         self.ready: bool = False
+        self.uptime: datetime = utcnow()
         self.session: ClientSession
         self.node: Node
         self.db: Pool
         self.run()
+
+    @property
+    def members(self):
+        return list(self.get_all_members())
+
+    @property
+    def channels(self):
+        return list(self.get_all_channels())
+
+    @property
+    def text_channels(self):
+        return list(
+            filter(
+                lambda channel: isinstance(channel, discord.TextChannel),
+                self.get_all_channels(),
+            )
+        )
+
+    @property
+    def voice_channels(self):
+        return list(
+            filter(
+                lambda channel: isinstance(channel, discord.VoiceChannel),
+                self.get_all_channels(),
+            )
+        )
 
     def run(self) -> None:
         super().run(
@@ -62,6 +91,7 @@ class Bleed(commands.AutoShardedBot):
         else:
             return
 
+        self.uptime
         self.session = ClientSession()
         await self.create_pool()
         await self.load_extension("jishaku")
@@ -241,7 +271,18 @@ class Bleed(commands.AutoShardedBot):
 
         elif isinstance(error, commands.CommandInvokeError):
             if isinstance(error.original, HTTPException):
-                return await ctx.warn("**Invalid code**" f"```\n{error.original}```")
+                if error.original.code == 50035:
+                    return await ctx.warn(
+                        "**Invalid code**" f"```\n{error.original}```"
+                    )
+
+                elif error.original.code == 50013:
+                    return await ctx.warn("I'm missing necessary **permissions**!")
+
+                elif error.original.code == 60003:
+                    return await ctx.warn(
+                        f"**{self.application.owner}** doesn't have **2FA** enabled!"
+                    )
 
             elif isinstance(error.original, ClientConnectorError):
                 return await ctx.warn("**API** no longer exists")
@@ -361,6 +402,13 @@ class Bleed(commands.AutoShardedBot):
 
         else:
             await self.process_commands(message)
+
+    async def on_member_join(self, member: discord.Member) -> None:
+        if not member.pending:
+            self.dispatch(
+                "member_agree",
+                member,
+            )
 
     async def on_member_remove(self, member: discord.Member) -> None:
         if member.premium_since:

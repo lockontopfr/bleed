@@ -19,7 +19,7 @@ class ScriptObject(BaseModel):
         return {
             "content": self.content,
             "embed": (self.embed or None),
-            "view": (self.view if self.view.children else None),
+            "view": self.view,
         }
 
     @property

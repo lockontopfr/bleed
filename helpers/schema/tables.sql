@@ -19,6 +19,30 @@ CREATE TABLE IF NOT EXISTS config (
     lastfm_reactions JSONB[] NOT NULL DEFAULT '{}'::JSONB[]
 );
 
+CREATE TABLE IF NOT EXISTS join_messages (
+    guild_id BIGINT NOT NULL,
+    channel_id BIGINT NOT NULL,
+    message TEXT NOT NULL,
+    self_destruct BIGINT,
+    PRIMARY KEY (guild_id, channel_id)
+);
+
+CREATE TABLE IF NOT EXISTS leave_messages (
+    guild_id BIGINT NOT NULL,
+    channel_id BIGINT NOT NULL,
+    message TEXT NOT NULL,
+    self_destruct BIGINT,
+    PRIMARY KEY (guild_id, channel_id)
+);
+
+CREATE TABLE IF NOT EXISTS boost_messages (
+    guild_id BIGINT NOT NULL,
+    channel_id BIGINT NOT NULL,
+    message TEXT NOT NULL,
+    self_destruct BIGINT,
+    PRIMARY KEY (guild_id, channel_id)
+);
+
 
 --- Antinuke ---
 CREATE TABLE IF NOT EXISTS antinuke (

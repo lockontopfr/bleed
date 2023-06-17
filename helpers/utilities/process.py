@@ -1,3 +1,5 @@
+from asyncio import Future
+from asyncio import ensure_future as future
 from asyncio import get_event_loop
 from functools import partial, wraps
 
@@ -12,3 +14,13 @@ def async_executor():
         return inner
 
     return outer
+
+
+async def ensure_future(coro, silent: bool = True) -> None:
+    task: Future = future(coro)
+
+    try:
+        return await task
+    except Exception:
+        if not silent:
+            raise

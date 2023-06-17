@@ -307,7 +307,7 @@ class Antinuke(Cog):
     @antinuke.command(
         name="admin",
         usage="(member)",
-        example="pass",
+        example="jonathan",
     )
     async def antinuke_admin(self, ctx: Context, *, member: Member | User) -> Message:
         """
@@ -347,11 +347,94 @@ class Antinuke(Cog):
         View all antinuke admins
         """
 
+        admins: List[int] = (
+            await self.bot.db.fetchval(
+                """
+            SELECT admins FROM antinuke
+            WHERE guild_id = $1;
+            """,
+                ctx.guild.id,
+            )
+            or []
+        )
+
+        if not admins:
+            return await ctx.warn("There are no **antinuke admins**")
+
+        return await ctx.paginate(
+            Embed(
+                title="Antinuke Admins",
+                description=[f"<@{user_id}>" for user_id in admins],
+            )
+        )
+
     @antinuke.command(name="list")
     async def antinuke_list(self, ctx: Context) -> Message:
         """
         View all enabled modules along with whitelisted members & bots
         """
+
+        configuration: Configuration = Configuration(
+            **await self.bot.db.fetchrow(
+                """
+            SELECT * FROM antinuke
+            WHERE guild_id = $1
+            """,
+                ctx.guild.id,
+            )
+        )
+
+        entries: List = []
+
+        if (ban := configuration.ban) and ban.status:
+            entries.append(
+                f"**ban** (do: {ban.punishment}, threshold: {ban.threshold}, cmd: {'on' if ban.command else 'off'})"
+            )
+
+        if (kick := configuration.kick) and kick.status:
+            entries.append(
+                f"**kick** (do: {kick.punishment}, threshold: {kick.threshold}, cmd: {'on' if kick.command else 'off'})"
+            )
+
+        if (role := configuration.role) and role.status:
+            entries.append(
+                f"**role** (do: {role.punishment}, threshold: {role.threshold}, cmd: {'on' if role.command else 'off'})"
+            )
+
+        if (channel := configuration.channel) and channel.status:
+            entries.append(
+                f"**channel** (do: {channel.punishment}, threshold: {channel.threshold})"
+            )
+
+        if (emoji := configuration.emoji) and emoji.status:
+            entries.append(
+                f"**emoji** (do: {emoji.punishment}, threshold: {emoji.threshold})"
+            )
+
+        if (webhook := configuration.webhook) and webhook.status:
+            entries.append(
+                f"**webhook** (do: {webhook.punishment}, threshold: {webhook.threshold})"
+            )
+
+        if (botadd := configuration.botadd) and botadd.status:
+            entries.append(f"**botadd** (do: {botadd.punishment})")
+
+        for user_id in configuration.whitelist:
+            user: discord.Member = self.bot.get_user(user_id)
+
+            entries.append(
+                f"**{user or 'Unknown User'}** whitelisted (`{user_id}`) [`{'MEMBER' if not user.bot else 'BOT'}`]"
+            )
+
+        if not entries:
+            return await ctx.warn("There are no **antinuke modules** enabled")
+
+        return await ctx.paginate(
+            Embed(
+                title="Antinuke modules & whitelist",
+                description=entries,
+            )
+        )
 
     @antinuke.command(
         name="botadd",

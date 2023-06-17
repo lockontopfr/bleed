@@ -9,7 +9,7 @@ from dateutil.relativedelta import relativedelta
 from .text import human_join, plural
 
 
-def size(size: float, format: str = "%.1f", trim: bool = False) -> str:
+def human_size(size: float, format: str = "%.2f", trim: bool = False) -> str:
     result = humanize.naturalsize(size, format=format)
     if trim:
         result = result.replace(" ", "")
